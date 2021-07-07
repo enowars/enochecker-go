@@ -1,4 +1,4 @@
-package checker
+package enochecker
 
 type InfoMessage struct {
 	ServiceName     string `json:"serviceName"`
@@ -10,7 +10,7 @@ type InfoMessage struct {
 
 type Result string
 
-var (
+const (
 	ResultOk      = Result("OK")
 	ResultError   = Result("INTERNAL_ERROR")
 	ResultMumble  = Result("MUMBLE")
@@ -53,7 +53,7 @@ func NewResultMessageError(msg string) *ResultMessage {
 
 type TaskMessageMethod string
 
-var (
+const (
 	TaskMessageMethodPutFlag  = TaskMessageMethod("putflag")
 	TaskMessageMethodGetFlag  = TaskMessageMethod("getflag")
 	TaskMessageMethodPutNoise = TaskMessageMethod("putnoise")

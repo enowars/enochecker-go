@@ -1,4 +1,4 @@
-package checker
+package enochecker
 
 import (
 	"context"
