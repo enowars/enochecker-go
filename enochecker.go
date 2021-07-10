@@ -44,18 +44,33 @@ type MumbleError interface {
 	Mumble() bool
 }
 
-func NewMumbleError(msg error) MumbleError {
-	return mumbleErrorMsg{msg}
-}
-
 type mumbleErrorMsg struct {
 	error
 }
 
+func NewMumbleError(msg error) MumbleError {
+	return mumbleErrorMsg{msg}
+}
+
 func (m mumbleErrorMsg) Mumble() bool { return true }
 
+type OfflineError interface {
+	error
+	Offline() bool
+}
+
+type offlineErrorMsg struct {
+	error
+}
+
+func NewOfflineError(msg error) OfflineError {
+	return offlineErrorMsg{msg}
+}
+
+func (m offlineErrorMsg) Offline() bool { return true }
+
 var ErrFlagNotFound = NewMumbleError(errors.New("flag not found"))
-var ErrNoiseNotFound = NewMumbleError(errors.New("flag not found"))
+var ErrNoiseNotFound = NewMumbleError(errors.New("noise not found"))
 var ErrVariantIdOutOfRange = errors.New("variantId out of range")
 
 // Logger is a typical logger interface
@@ -64,10 +79,6 @@ type Logger interface {
 	Infof(format string, args ...interface{})
 	Warnf(format string, args ...interface{})
 	Errorf(format string, args ...interface{})
-	Debug(args ...interface{})
-	Info(args ...interface{})
-	Warn(args ...interface{})
-	Error(args ...interface{})
 }
 
 type Checker struct {
@@ -111,6 +122,8 @@ func (c *Checker) checkerWithErrorHandler(writer http.ResponseWriter, request *h
 			res = NewResultMessageOffline("timeout")
 		} else if _, ok := err.(net.Error); ok {
 			res = NewResultMessageOffline("network error")
+		} else if _, ok := err.(OfflineError); ok {
+			res = NewResultMessageOffline(err.Error())
 		} else if _, ok := err.(MumbleError); ok {
 			res = NewResultMessageMumble(err.Error())
 		} else {
@@ -126,7 +139,7 @@ func (c *Checker) checkerWithErrorHandler(writer http.ResponseWriter, request *h
 
 	c.log.Infof("[%s] %s - done [%dms]", tm.TaskChainId, tm.Method, time.Since(startTs).Milliseconds())
 	if err := json.NewEncoder(writer).Encode(res); err != nil {
-		c.log.Error(err)
+		c.log.Errorf("%v", err)
 	}
 }
 
@@ -145,7 +158,7 @@ func (c *Checker) index(writer http.ResponseWriter, request *http.Request, _ htt
 	writer.Header().Set("Content-Type", "text/html")
 	_, err := writer.Write(indexPage)
 	if err != nil {
-		c.log.Error(err)
+		c.log.Errorf("%v", err)
 	}
 }
 
@@ -153,7 +166,7 @@ func (c *Checker) service(writer http.ResponseWriter, request *http.Request, _ h
 	writer.Header().Set("Content-Type", "application/json; charset=utf-8")
 	err := json.NewEncoder(writer).Encode(c.info)
 	if err != nil {
-		c.log.Error(err)
+		c.log.Errorf("%v", err)
 	}
 }
 

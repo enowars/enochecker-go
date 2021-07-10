@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http/httptest"
 	"testing"
@@ -32,7 +33,7 @@ func (m *mockCheckerHandler) GetNoise(ctx context.Context, message *TaskMessage)
 }
 
 func (m *mockCheckerHandler) Havoc(ctx context.Context, message *TaskMessage) error {
-	panic("implement me")
+	return NewOfflineError(errors.New("offline"))
 }
 
 func (m *mockCheckerHandler) Exploit(ctx context.Context, message *TaskMessage) (*HandlerInfo, error) {
@@ -44,7 +45,7 @@ func (m *mockCheckerHandler) GetServiceInfo() *InfoMessage {
 		ServiceName:     "mock",
 		FlagVariants:    1,
 		NoiseVariants:   1,
-		HavocVariants:   0,
+		HavocVariants:   1,
 		ExploitVariants: 1,
 	}
 }
@@ -55,10 +56,6 @@ func (m *nullLogger) Debugf(format string, args ...interface{}) {}
 func (m *nullLogger) Infof(format string, args ...interface{})  {}
 func (m *nullLogger) Warnf(format string, args ...interface{})  {}
 func (m *nullLogger) Errorf(format string, args ...interface{}) {}
-func (m *nullLogger) Debug(args ...interface{})                 {}
-func (m *nullLogger) Info(args ...interface{})                  {}
-func (m *nullLogger) Warn(args ...interface{})                  {}
-func (m *nullLogger) Error(args ...interface{})                 {}
 
 func newMockChecker() *Checker {
 	return NewChecker(&nullLogger{}, &mockCheckerHandler{})
@@ -95,7 +92,7 @@ func TestHandlers(t *testing.T) {
 		{TaskMessageMethodGetFlag, 0, ResultMumble},
 		{TaskMessageMethodPutNoise, 0, ResultOk},
 		{TaskMessageMethodGetNoise, 0, ResultOk},
-		{TaskMessageMethodHavoc, 0, ResultError},
+		{TaskMessageMethodHavoc, 0, ResultOffline},
 		{TaskMessageMethodExploit, 1, ResultError},
 		{TaskMessageMethodExploit, 0, ResultOk},
 	}
